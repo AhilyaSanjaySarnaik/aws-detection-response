@@ -1,0 +1,3 @@
+cd ~/aws-detection-response/terraform
+terraform init
+terraform apply
