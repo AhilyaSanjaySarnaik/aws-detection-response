@@ -1,0 +1,26 @@
+# CloudWatch Logs Insights queries.
+# Select all four /aws/lambda/cdr-* log groups, then paste a query.
+
+# 1. Time to remediate per scenario (this is your results table)
+fields scenario, action, status, seconds_to_remediate
+| filter metric = "remediation" and status in ["remediated", "dry_run"]
+| stats count() as runs,
+        avg(seconds_to_remediate) as avg_seconds,
+        min(seconds_to_remediate) as min_seconds,
+        max(seconds_to_remediate) as max_seconds
+  by scenario
+
+# 2. GuardDuty: detection delay vs. response delay
+fields finding_type, detection_seconds, seconds_to_remediate
+| filter scenario = "compromised_credentials"
+| sort @timestamp desc
+
+# 3. Everything that was NOT fixed automatically (alerts, skips, failures)
+fields @timestamp, scenario, action, status, reason, error
+| filter metric = "remediation" and status not in ["remediated", "dry_run"]
+| sort @timestamp desc
+
+# 4. Full audit trail of automated actions
+fields @timestamp, scenario, action, status, actor, source_ip, group_id, bucket, trail, user_name
+| filter metric = "remediation"
+| sort @timestamp desc

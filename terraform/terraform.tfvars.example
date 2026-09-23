@@ -1,0 +1,12 @@
+alert_email = "you@example.com"
+
+# Start in dry-run: responders log and alert but change nothing.
+# Once alerts look right, set to false and apply again.
+dry_run = true
+
+# Set to false if these already exist in the account/region.
+create_trail     = true
+enable_guardduty = true
+
+# Your own admin/break-glass roles, so the responder can never lock you out.
+protected_role_names = []
