@@ -4,16 +4,20 @@ Event-driven pipeline that detects common AWS attack techniques and fixes them a
 
 ## Results
 
-<!-- Fill in from queries/logs_insights.txt query 1 after running the scenarios. -->
+**Every emulated attack was detected and automatically reversed in under 9 seconds**, measured from the attacker's API call to the completed fix.
 
-| Scenario | Stratus technique | Automated response | Median time to remediate |
-|---|---|---|---|
-| SSH opened to the internet | `aws.exfiltration.ec2-security-group-open-port-22-ingress` | Rule revoked | [X] s |
-| S3 bucket backdoored to external account | `aws.exfiltration.s3-backdoor-bucket-policy` | Grant removed, Block Public Access enforced | [X] s |
-| CloudTrail logging stopped | `aws.defense-evasion.cloudtrail-stop` | Logging restarted | [X] s |
-| EC2 role credentials stolen | `aws.credential-access.ec2-steal-instance-credentials` | Stolen sessions revoked | [X] s detection + [X] s response |
+| Scenario | Stratus technique | Automated response | Runs | Time to remediate |
+|---|---|---|---|---|
+| SSH opened to the internet | `aws.exfiltration.ec2-security-group-open-port-22-ingress` | Rule revoked | 2 (1 Stratus, 1 manual) | 4.5–5.6 s (avg 5.1 s) |
+| S3 bucket backdoored to external account | `aws.exfiltration.s3-backdoor-bucket-policy` | Grant removed, Block Public Access enforced | 1 | 8.5 s |
+| CloudTrail logging stopped | `aws.defense-evasion.cloudtrail-stop` | Logging restarted | 1 | 8.4 s |
+| EC2 role credentials stolen | `aws.credential-access.ec2-steal-instance-credentials` | Stolen sessions revoked | – | Not run (see below) |
 
-Time to remediate is measured from the attacker's API call (`eventTime` in CloudTrail, or `eventFirstSeen` in GuardDuty) to the completed fix.
+Time to remediate is measured from `eventTime` in the attacker's CloudTrail event to the moment the responder finished its fix, taken from the responders' own JSON logs with `queries/logs_insights.txt`.
+
+**Test environment:** AWS free plan account, `eu-west-1`, September 2026, reusing an existing multi-region CloudTrail trail. Sample sizes are small (one or two runs per scenario), so treat these as indicative timings rather than a benchmark.
+
+**Not tested:** the credential-theft scenario needs GuardDuty, which is not available on AWS free plan accounts. The `credential_response` responder is deployed and unit tested (including against mocked AWS with moto) but has not been exercised by a live GuardDuty finding.
 
 ## Architecture
 
@@ -64,6 +68,18 @@ terraform apply
 
 Confirm the SNS subscription email AWS sends you, or alerts won't arrive.
 
+### Running from AWS CloudShell
+
+This project was deployed entirely from CloudShell, which needs no local AWS credentials. CloudShell's home folder is limited to 1 GB, which the Terraform AWS provider and Stratus data can exceed, so keep their large downloads in `/tmp`:
+
+```bash
+export TF_DATA_DIR=/tmp/terraform-data                   # Terraform plugins
+mkdir -p /tmp/stratus-red-team
+ln -sfn /tmp/stratus-red-team ~/.stratus-red-team         # Stratus state and plugins
+```
+
+`/tmp` is cleared when CloudShell restarts: rerun `terraform init` afterwards, and finish Stratus scenarios within one session (or run `stratus cleanup --all`).
+
 If `apply` fails because GuardDuty or a trail already exists, set `enable_guardduty = false` or `create_trail = false` and apply again.
 
 ## Test
@@ -111,6 +127,7 @@ Set an AWS Budget alarm before deploying. Tear everything down with `terraform d
 - **`PutRolePolicy` on all roles is powerful.** The credential responder can modify any role not on the protected list. Compromising this Lambda would be valuable to an attacker; in production it should run in a separate security account.
 - **Conservative S3 rules.** A `*` principal is kept only if a condition scopes it to an account or org (`aws:SourceAccount`, `aws:PrincipalOrgID`, etc.). Legitimate but unusual public patterns will be removed.
 - **Alert-only trail tampering.** Deleted or reconfigured trails are reported, not restored.
+- **GuardDuty not live-tested.** The free plan account used for testing cannot enable GuardDuty, so the credential responder has only been tested offline.
 - **Checkov findings.** Some are accepted for a lab (e.g. Lambdas not in a VPC, no dead-letter queue, SNS without a customer-managed KMS key) and reported with `soft_fail`.
 
 ## Repository layout
