@@ -1,4 +1,4 @@
-# AWS Automated Threat Detection & Response
+**# AWS Automated Threat Detection & Response
 
 Event-driven pipeline that detects common AWS attack techniques and fixes them automatically, usually before an attacker can use them. Attacks are emulated with [Stratus Red Team](https://github.com/DataDog/stratus-red-team), and every automated action is logged with its time to remediate.
 
@@ -143,3 +143,4 @@ Set an AWS Budget alarm before deploying. Tear everything down with `terraform d
 ├── queries/                 # Logs Insights + Athena queries
 └── .github/workflows/ci.yml # tests, terraform validate, Checkov
 ```
+**
