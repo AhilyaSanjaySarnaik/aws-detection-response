@@ -17,11 +17,11 @@ Time to remediate is measured from `eventTime` in the attacker's CloudTrail even
 
 **Alert sent by the responder when the Stratus SSH attack was reversed:**
 
-![Alert email showing the port 22 rule revoked 4.5 seconds after it was opened](Screenshot%202026-09-23%20164817.png)
+![Alert email showing the port 22 rule revoked 4.5 seconds after it was opened](docs/alert-email.png)
 
 **Time-to-remediate results from CloudWatch Logs Insights:**
 
-![CloudWatch Logs Insights query results showing time to remediate per scenario](Screenshot%202026-09-23%20165226.png)
+![CloudWatch Logs Insights query results showing time to remediate per scenario](docs/results-query.png)
 
 **Test environment:** AWS free plan account, `eu-west-1`, September 2026, reusing an existing multi-region CloudTrail trail. Sample sizes are small (one or two runs per scenario), so treat these as indicative timings rather than a benchmark.
 
